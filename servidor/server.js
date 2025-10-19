@@ -5,7 +5,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
 import connectDB from './config/Db.config.js';
-import initAdmin from './config/initAdmin.js';
+//import initAdmin from './config/initAdmin.js';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -20,7 +20,7 @@ app.use(cookieParser());
 app.use(cors());
 
 // Rutas base
-import exampleRouter from './src/routes/example.routes.js';
+import exampleRouter from './routes/rutaAmigo.js';
 
 app.use('/api/example', exampleRouter);
 
@@ -29,7 +29,6 @@ connectDB()
   .then(async () => {
     console.log('Conexión a la base de datos establecida.');
 
-    await initAdmin(); // Crear admin por defecto si no existe
 
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
