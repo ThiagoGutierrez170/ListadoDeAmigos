@@ -3,10 +3,10 @@ import controllerAmigo from '../controllers/controllerAmigo.js';
 
 const rutaAmigo = Router();
 
-rutaAmigo.get('/listar', controllerMusica.obtenerAmigo);
-rutaAmigo.post('/nuevo', controllerMusica.crearAmigo);
-rutaAmigo.get('/buscar/:id', controllerMusica.obtenerAmigoById);
-rutaAmigo.put('/:id', controllerMusica.actualizarAmigo);
-rutaAmigo.delete('/:id', controllerMusica.eliminarAmigo);
+rutaAmigo.get('/listar', controllerAmigo.obtenerAmigo);
+rutaAmigo.post('/nuevo', controllerAmigo.crearAmigo);
+rutaAmigo.get('/buscar/:id', controllerAmigo.obtenerAmigoById);
+rutaAmigo.put('/:id', controllerAmigo.actualizarAmigo);
+rutaAmigo.delete('/:id', controllerAmigo.eliminarAmigo);
 
 export default rutaAmigo;
