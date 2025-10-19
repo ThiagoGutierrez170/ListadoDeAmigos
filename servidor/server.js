@@ -5,7 +5,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 
 import connectDB from './config/Db.config.js';
-import initAdmin from './config/initAdmin.js';
+//import initAdmin from './config/initAdmin.js';
 
 // Cargar variables de entorno
 dotenv.config();
