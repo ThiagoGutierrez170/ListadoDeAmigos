@@ -19,15 +19,15 @@ app.use(cookieParser());
 app.use(cors());
 
 // Rutas base
-import exampleRouter from './routes/rutaAmigo.js';
+import rutaAmigo from './routes/rutaAmigo.js';
 
-app.use('/api/example', exampleRouter);
+app.use('/api/amigos', rutaAmigo);
 
 // Conexión a la base de datos e inicialización
 connectDB()
   .then(async () => {
     console.log('Conexión a la base de datos establecida.');
-    const PORT = process.env.PORT || 5000;
+    const PORT = process.env.PORT || 8080;
     app.listen(PORT, () => {
       console.log(`Servidor corriendo en http://localhost:${PORT}`);
     });

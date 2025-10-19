@@ -23,13 +23,22 @@ export default function AmigosApp() {
     setTimeout(() => setToast(null), 4000)
   }, [])
 
+  // Función de mapeo robusta (Ya la tenías, la mantenemos para seguridad)
+  const mapAmigoId = (amigo) => ({
+    ...amigo,
+    id: amigo.id || (amigo._id ? amigo._id.toString() : undefined)
+  })
+
   const fetchAmigos = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch(`${API_BASE_URL}/listar`)
       if (!response.ok) throw new Error("Error al cargar amigos")
       const data = await response.json()
-      setAmigos(data)
+
+      const amigosConId = data.map(mapAmigoId); // Usamos la función de mapeo
+
+      setAmigos(amigosConId)
     } catch (error) {
       showToast("Error al cargar la lista de amigos", "error")
       console.error(error)
@@ -49,17 +58,16 @@ export default function AmigosApp() {
 
   const handleEdit = async (id) => {
     try {
-      console.log("[v0] Editando amigo con ID:", id)
+      // Paso 1: Obtener los datos individuales (se necesita el ID)
       const response = await fetch(`${API_BASE_URL}/buscar/${id}`)
-      console.log("[v0] Response status:", response.status)
-
       if (!response.ok) throw new Error("Error al cargar amigo")
 
       const data = await response.json()
-      console.log("[v0] Datos recibidos de la API:", data)
-      console.log("[v0] Tipo de fechaCumpleanos:", typeof data.fechaCumpleanos)
 
-      setEditingAmigo(data)
+      // Paso 2: Usar la función de mapeo para asegurar que el objeto tenga 'id'
+      const amigoConId = mapAmigoId(data);
+
+      setEditingAmigo(amigoConId); // <-- ¡El objeto editingAmigo ahora tiene 'id'!
       setIsFormOpen(true)
     } catch (error) {
       console.error("[v0] Error completo:", error)
@@ -68,12 +76,16 @@ export default function AmigosApp() {
   }
 
   const handleDelete = (amigo) => {
-    setDeletingAmigo(amigo)
+    // Paso 3: Asegurar que el objeto a eliminar tiene 'id'
+    setDeletingAmigo(mapAmigoId(amigo))
   }
 
   const confirmDelete = async () => {
     try {
+      // Aquí deletingAmigo.id YA debe ser válido gracias a mapAmigoId en handleDelete
       console.log("ID de eliminación:", deletingAmigo.id);
+      if (!deletingAmigo.id) throw new Error("ID de eliminación no encontrado.")
+
       const response = await fetch(`${API_BASE_URL}/${deletingAmigo.id}`, {
         method: "DELETE",
       })
@@ -83,7 +95,7 @@ export default function AmigosApp() {
       showToast("Amigo eliminado exitosamente", "success")
       setDeletingAmigo(null)
     } catch (error) {
-      showToast("Error al eliminar el amigo", "error")
+      showToast(`Error al eliminar: ${error.message}`, "error")
       console.error(error)
     }
   }
@@ -91,8 +103,18 @@ export default function AmigosApp() {
   // components/AmigosApp.jsx
   const handleSubmit = async (formData) => {
     try {
-      const url = editingAmigo ? `${API_BASE_URL}/${editingAmigo.id}` : `${API_BASE_URL}/nuevo`
-      const method = editingAmigo ? "PUT" : "POST"
+      // Paso 4: Construcción segura de la URL para PUT/POST
+      // Si estamos editando, usamos editingAmigo.id. Si es null, es 'nuevo'.
+      const id = editingAmigo?.id;
+
+      const url = id ? `${API_BASE_URL}/${id}` : `${API_BASE_URL}/nuevo`
+      const method = id ? "PUT" : "POST"
+
+      // Registro de seguridad
+      console.log(`[v0] Intentando ${method} en URL: ${url}`)
+      if (id && !id.includes('-') && id.length !== 24) {
+        console.warn("[v0] ID parece no ser un ObjectId válido, pero se está usando.")
+      }
 
       const response = await fetch(url, {
         method,
@@ -101,27 +123,23 @@ export default function AmigosApp() {
       })
 
       if (!response.ok) {
-        // 1. Intenta leer el cuerpo del error (si es JSON)
+        // Manejo de errores de la API (lo dejaste bien, lo mantengo)
         const errorText = await response.text()
         let errorMessage = `Error ${response.status}: ${response.statusText}`
         try {
           const errorData = JSON.parse(errorText)
-          errorMessage = errorData.message || errorText // Asume que el backend devuelve un objeto { message: "..." }
+          errorMessage = errorData.error || errorData.message || errorText
         } catch {
-          // Si no es JSON, usa el texto crudo o el estado HTTP
           errorMessage = errorText || errorMessage
         }
-
-        // Muestra el mensaje de error específico de la API
         throw new Error(errorMessage)
       }
 
       await fetchAmigos()
-      showToast(editingAmigo ? "Amigo actualizado exitosamente" : "Amigo creado exitosamente", "success")
+      showToast(id ? "Amigo actualizado exitosamente" : "Amigo creado exitosamente", "success")
       setIsFormOpen(false)
       setEditingAmigo(null)
     } catch (error) {
-      // Muestra el mensaje de error capturado, que ahora puede ser el de la API
       showToast(`Error al guardar: ${error.message}`, "error")
       console.error(error)
     }

@@ -4,11 +4,11 @@ import dotenv from 'dotenv';
 
 dotenv.config(); // Cargar las variables de entorno desde .env
 
-const URL_DB = process.env.MONGODB_URI;
+const MONGO_URL = process.env.MONGO_URL;
 
 const connectarDB = async () => {
     try {
-        await mongoose.connect(URL_DB, {
+        await mongoose.connect(MONGO_URL, {
             dbName: 'ListadoDeAmigos'
         });
         console.log('MongoDB conectado');

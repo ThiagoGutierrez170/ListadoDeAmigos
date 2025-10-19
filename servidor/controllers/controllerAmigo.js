@@ -2,29 +2,38 @@ import mongoose from 'mongoose';
 import Amigo from '../models/amigoModel.js';
 
 const controllerAmigo = {
-
+    // POST /api/amigos/nuevo
     crearAmigo: async (req, res) => {
         try {
             const { nombre, fechaCumple } = req.body;
             if (!nombre || !fechaCumple) {
-                return res.status(400).json({ error: 'Faltan datos' });
+                return res.status(400).json({ error: 'Faltan datos (nombre y fechaCumple son requeridos)' });
             }
+            // Mongoose manejará la conversión de fecha si el schema es Date
             const nuevoAmigo = await Amigo.create(req.body);
             return res.status(201).json(nuevoAmigo);
         } catch (error) {
-            return res.status(400).json({ error: 'Error al crear un dato de un amigo' });
+            console.error('Error al crear un amigo:', error.message);
+            // Captura errores de validación de Mongoose
+            if (error.name === 'ValidationError') {
+                return res.status(400).json({ error: error.message });
+            }
+            return res.status(500).json({ error: 'Error del servidor al crear amigo' });
         }
     },
 
+    // GET /api/amigos/listar
     obtenerAmigo: async (req, res) => {
         try {
-            const amigo = await Amigo.find();
-            res.json(amigo);
+            const amigos = await Amigo.find();
+            res.json(amigos);
         } catch (error) {
-            res.status(500).json({ error: 'Error al obtener datos del amigo' });
+            console.error(error);
+            res.status(500).json({ error: 'Error del servidor al obtener amigos' });
         }
     },
 
+    // GET /api/amigos/buscar/:id
     obtenerAmigoById: async (req, res) => {
         try {
             const { id } = req.params;
@@ -33,49 +42,64 @@ const controllerAmigo = {
             }
             const amigo = await Amigo.findById(id);
             if (!amigo) {
-                res.status(404).json({ mensaje: "Datos del amigo no encontrada" });
-                return;
+                return res.status(404).json({ mensaje: "Amigo no encontrado" });
             }
             res.json(amigo);
         } catch (error) {
-            console.log(error);
-            res.status(500).json({ error: 'Error al obtener los datos del amigo' });
+            console.error(error);
+            res.status(500).json({ error: 'Error del servidor al obtener amigo' });
         }
     },
 
+    // PUT /api/amigos/:id
     actualizarAmigo: async (req, res) => {
         try {
             const { id } = req.params;
+            const updateData = req.body;
+
             if (!mongoose.Types.ObjectId.isValid(id)) {
                 return res.status(400).json({ error: 'ID no válido' });
             }
-            const amigoActualizado = await Musica.findByIdAndUpdate(id, req.body, { new: true });
+
+            // Mongoose automáticamente ignora campos no definidos y valida el tipo
+            const amigoActualizado = await Amigo.findByIdAndUpdate(
+                id,
+                updateData,
+                { new: true, runValidators: true } // runValidators for schema validation
+            );
+
             if (!amigoActualizado) {
-                res.status(404).json({ mensaje: "Datos del amigo no encontrada" });
-                return;
+                return res.status(404).json({ mensaje: 'Amigo no encontrado' });
             }
-            res.json(amigoActualizado);
+
+            // Mejor respuesta: devuelve el objeto actualizado
+            res.status(200).json(amigoActualizado);
+
         } catch (error) {
-            console.log(error);
-            res.status(500).json({ error: 'Error al actualizar datos del amigo' });
+            console.error('Error al actualizar amigo desde el servidor:', error);
+            if (error.name === 'ValidationError') {
+                return res.status(400).json({ error: error.message });
+            }
+            res.status(500).json({ mensaje: 'Error del servidor al actualizar amigo' });
         }
     },
 
+    // DELETE /api/amigos/:id
     eliminarAmigo: async (req, res) => {
         try {
             const { id } = req.params;
             if (!mongoose.Types.ObjectId.isValid(id)) {
                 return res.status(400).json({ error: 'ID no válido' });
             }
-            const amigoEliminado = await Musica.findByIdAndDelete(id);
+            const amigoEliminado = await Amigo.findByIdAndDelete(id);
             if (!amigoEliminado) {
-                res.status(404).json({ mensaje: "Datos del amigo no encontrada" });
-                return;
+                return res.status(404).json({ mensaje: "Amigo no encontrado" });
             }
-            res.json({ mensaje: "Datos del amigO eliminada correctamente" });
+            // Mejor respuesta: 200 OK sin cuerpo o 204 No Content
+            res.status(200).json({ mensaje: "Amigo eliminado correctamente" });
         } catch (error) {
-            console.log(error);
-            res.status(500).json({ error: 'Error al eliminar datos del amig0' });
+            console.error(error);
+            res.status(500).json({ error: 'Error del servidor al eliminar amigo' });
         }
     }
 };
